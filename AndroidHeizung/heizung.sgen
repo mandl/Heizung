@@ -1,0 +1,23 @@
+GeneratorModel for yakindu::java {
+
+	statechart Heizung {
+
+		feature Outlet {
+			targetProject = "Heizung"
+			targetFolder = "src-gen"
+		}
+		
+		feature GeneralFeatures {
+			InterfaceObserverSupport = true
+			RuntimeService = false
+			TimerService = true
+		}
+		
+		feature Naming {
+			basePackage =  "com.steuerung.heizung.state" 
+			implementationSuffix =  "impl" 
+		}
+		
+		
+	}
+}
