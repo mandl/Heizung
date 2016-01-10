@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <PreferenceCategory
+        android:key="einstell"
+        android:title="Einstellungen" >
+        <CheckBoxPreference
+            android:key="pref_autoFreitag"
+            android:summary="Heizung am Freitag starten"
+            android:title="Automatic" android:persistent="true"/>
+        <CheckBoxPreference
+            android:key="pref_PowerLost"
+            android:summary="Sende SMS wenn Strom ausfällt"
+            android:title="Spannungsausfall melden" android:persistent="true"/>
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:key="state"
+        android:title="Status" >
+    </PreferenceCategory>
+
+    <com.steuerung.heizung.ResetHourDialogPreference
+        android:key="reset"
+        android:dialogMessage="Zähler zurücksetzen?"
+        android:summary="Zähler zurücksetzen"
+        android:title="Stunden / Starts" />
+        android:persistent="true"
+
+</PreferenceScreen>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Heizung</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="menu_settings">Settings</string>
+    <string name="on">On</string>
+    <string name="off">Off</string>
+    <string name="auto">Auto</string>
+    <string name="time">Time</string>
+    <string name="servicestart">HeizungService start</string>
+    <string name="failPower">Power fail</string>
+    <string name="servicestop">Heizungservice stop</string>
+    <string name="onPower">Power good</string>
+    <string name="fireAlarm">Fire Alram</string>
+    <string name="pref_title">demo</string>
+    <string name="pref_user_name">hallo</string>
+    <string name="pref_user_name_summary">eeeeeeeeeeeeeeeeeee</string>
+
+</resources>
