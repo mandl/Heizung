@@ -23,6 +23,7 @@
         android:dialogMessage="Zähler zurücksetzen?"
         android:summary="Zähler zurücksetzen"
         android:title="Stunden / Starts" />
+    <EditTextPreference android:key="phoneNumber" android:title="Phonenumber" android:summary="This number receives the sms"/>
         android:persistent="true"
 
 </PreferenceScreen>

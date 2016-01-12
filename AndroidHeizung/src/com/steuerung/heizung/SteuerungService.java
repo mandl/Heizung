@@ -34,6 +34,10 @@ import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import com.steuerung.heizung.state.TimerService;
+import com.steuerung.heizung.state.heizungimpl.HeizungStatemachine;
+import com.steuerung.heizung.state.heizungimpl.IHeizungStatemachine.SCIHeizungListener;
+
 import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -52,13 +56,9 @@ import android.telephony.SmsManager;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.steuerung.heizung.state.TimerService;
-import com.steuerung.heizung.state.heizungimpl.HeizungStatemachine;
-import com.steuerung.heizung.state.heizungimpl.IHeizungStatemachine.SCIHeizungListener;
-
 public class SteuerungService extends Service implements SCIHeizungListener {
 
-	private boolean SimualtionMode = false;
+	private boolean SimualtionMode = true;
 
 	private static Timer timer = new Timer();
 
@@ -118,7 +118,7 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 
 	private BufferedReader mreader;
 
-        private String PhoneNumber = "";
+        private String mPhoneNumber = "";
 
 	private TimerService myTimerService = new TimerService();
 	private HeizungStatemachine myStateMaschine = new HeizungStatemachine();
@@ -212,7 +212,9 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 		mBrennerStarts = sharedPrefs.getLong("pref_BrennerStarts", 0);
 		mRunTimeDate = sharedPrefs.getString("pref_RunTimeDate",
 				sdf2.format(new Date()));
-
+		
+		mPhoneNumber = sharedPrefs.getString("phoneNumber", "");
+		
 		// Instance field for listener
 		listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
 			public void onSharedPreferenceChanged(SharedPreferences prefs,
@@ -226,7 +228,12 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 					} else {
 						myStateMaschine.setAuto(false);
 					}
-
+				}else if (key.equals("reset"))
+				{
+					mPhoneNumber = prefs.getString("phoneNumber", "");
+					
+				
+				
 				} else if (key.equals("reset")) {
 
 					mRunTime = 0;
@@ -482,8 +489,8 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 				new Intent(this, MainActivity.class), 0);
 
 		// Set the info for the views that show in the notification panel.
-		notification.setLatestEventInfo(this, getText(R.string.servicestart),
-				text, contentIntent);
+		//notification.setLatestEventInfo(this, getText(R.string.servicestart),
+		//		text, contentIntent);
 
 		// Send the notification.
 		// We use a string id because it is a unique number. We use it later to
@@ -592,7 +599,7 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 		if (SimualtionMode == true) {
 			Number = "5556";
 		} else {
-			Number = PhoneNumber;
+			Number = mPhoneNumber;
 
 		}
 		manager.sendTextMessage(Number, null, text, null, null);
