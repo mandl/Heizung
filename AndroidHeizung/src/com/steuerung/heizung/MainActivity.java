@@ -48,15 +48,13 @@ public class MainActivity extends Activity {
 	public static final String PREFS_NAME = "HeizungPrefsFile";
 
 	private TextView battView;
-	// private EditText btnFreitag;
 	private EditText btneditRunTime;
 	private EditText btneditVerbrauch;
+	private ToggleButton mbtnEinAus;
+	private ToggleButton mDayNight;
 	
 	private  CheckBox btnStoerung;
 		
-
-
-	// private OnSharedPreferenceChangeListener listener;
 
 	private BroadcastReceiver receiver = new BroadcastReceiver() {
 
@@ -84,10 +82,7 @@ public class MainActivity extends Activity {
 				btneditVerbrauch.setText(string3 + " Liter");
 				
 				btnStoerung.setChecked(stoerung);
-				
-			
-				
-				
+							
 				
 			}
 		}
@@ -108,10 +103,14 @@ public class MainActivity extends Activity {
 		btneditVerbrauch = (EditText) findViewById(R.id.editVerbrauch);
 		btneditDate = (EditText) findViewById(R.id.EditTextDatum);
 		
-		ToggleButton btnEinAus = (ToggleButton) findViewById(R.id.toggleButtonOnOff);
+		mbtnEinAus = (ToggleButton) findViewById(R.id.toggleButtonOnOff);
+		mDayNight = (ToggleButton) findViewById(R.id.tagNachtOnOff);
+		
 		battView = (TextView) findViewById(R.id.textBatt);
 
-		btnEinAus.setChecked(sharedPrefs.getBoolean("pref_HeizungEin", false));
+		mbtnEinAus.setChecked(sharedPrefs.getBoolean("pref_HeizungEin", false));
+		mDayNight.setChecked(sharedPrefs.getBoolean("pref_DayNight", false));
+		
 		
 		btnStoerung= (CheckBox)findViewById(R.id.checkBoxStoerung);
 		
@@ -233,20 +232,13 @@ public class MainActivity extends Activity {
 	protected void onStop() {
 		super.onStop();
 		Log.i("MANDL", "onStop");
-
-		// We need an Editor object to make preference changes.
-		// All objects are from android.context.Context
-
-		// ToggleButton btnFreitag = (ToggleButton)
-		// findViewById(R.id.toggleButtonAuto);
-		ToggleButton btnEinAus = (ToggleButton) findViewById(R.id.toggleButtonOnOff);
-
 		SharedPreferences sharedPrefs = PreferenceManager
 				.getDefaultSharedPreferences(this);
 
 		SharedPreferences.Editor editor = sharedPrefs.edit();
 		// editor.putBoolean("pref_autoFreitag", btnFreitag.isChecked());
-		editor.putBoolean("pref_HeizungEin", btnEinAus.isChecked());
+		editor.putBoolean("pref_HeizungEin", mbtnEinAus.isChecked());
+		editor.putBoolean("pref_DayNight", mDayNight.isChecked());
 
 		// Commit the edits!
 		editor.commit();

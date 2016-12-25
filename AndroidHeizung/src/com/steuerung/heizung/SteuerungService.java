@@ -119,7 +119,7 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 
 	private TimerService myTimerService = new TimerService();
 	private HeizungStatemachine myStateMaschine = new HeizungStatemachine();
-	// private HeizungListener myHeizungListener = new HeizungListener();
+	
 
 	private AlarmManager mAlarmManager;
 
@@ -200,7 +200,7 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 		// Restore preferences
 		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-		// StoerungSMSsenden = sharedPrefs.getBoolean("pref_PowerLost", false);
+	
 		PowerFailsenden = sharedPrefs.getBoolean("pref_PowerLost", false);
 
 		mRunTime = sharedPrefs.getLong("pref_RunHour", 0);
@@ -221,9 +221,9 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 					PowerFailsenden = prefs.getBoolean("pref_PowerLost", false);
 				} else if (key.equals("pref_autoFreitag")) {
 					if (prefs.getBoolean("pref_autoFreitag", false)) {
-						myStateMaschine.setAuto(true);
+						//myStateMaschine.setAuto(true);
 					} else {
-						myStateMaschine.setAuto(false);
+						//myStateMaschine.setAuto(false);
 					}
 				} else if (key.equals("mPhoneNumber")) {
 					mPhoneNumber = prefs.getString("phoneNumber", "");
@@ -338,14 +338,16 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 		String action = intent.getAction();
 		if (action.equals(ACTION_LAUNCH_ALARM)) {
 
-			myStateMaschine.raiseTime();
+			//myStateMaschine.raiseTime();
 			FreitagAnNext();
 
 		} else if (action.equals(ACTION_HEIZUNG_AN)) {
-			myStateMaschine.raiseOn();
+			HeizungAn();
+			//myStateMaschine.raiseOn();
 
 		} else if (action.equals(ACTION_HEIZUNG_AUS)) {
-			myStateMaschine.raiseOff();
+			HeizungAus();
+			//myStateMaschine.raiseOff();
 		} else if (action.equals(ACTION_DAY_NIGHT_ON)) {
 			dayNightActiv = true;
 
@@ -353,18 +355,20 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 			dayNightActiv = false;
 
 		} else if (action.equals(ACTION_FREITAG_AN)) {
-			myStateMaschine.setAuto(true);
+			//myStateMaschine.setAuto(true);
 
 		} else if (action.equals(ACTION_FREITAG_AUS)) {
 
-			myStateMaschine.setAuto(false);
+			//myStateMaschine.setAuto(false);
 		} else if (action.equals(ACTION_SMS_AN)) {
 			logSDCard("SMS an");
-			myStateMaschine.raiseOn();
+			HeizungAn();
+			//myStateMaschine.raiseOn();
 
 		} else if (action.equals(ACTION_SMS_AUS)) {
 			logSDCard("SMS aus ");
-			myStateMaschine.raiseOff();
+			HeizungAus();
+			//myStateMaschine.raiseOff();
 
 		} else if (action.equals(ACTION_SMS_STATUS)) {
 			SMSStatus();

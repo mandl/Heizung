@@ -16,7 +16,7 @@
     <string name="pref_title">demo</string>
     <string name="pref_user_name">hallo</string>
     <string name="pref_user_name_summary">eeeeeeeeeeeeeeeeeee</string>
-    <string name="day_on">Tag Nacht an</string>
+    <string name="day_on">Tag/Nacht an</string>
     <string name="day_off">Tag/Nacht aus</string>
 
 </resources>
