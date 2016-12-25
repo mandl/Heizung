@@ -37,6 +37,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -50,6 +51,10 @@ public class MainActivity extends Activity {
 	// private EditText btnFreitag;
 	private EditText btneditRunTime;
 	private EditText btneditVerbrauch;
+	
+	private  CheckBox btnStoerung;
+		
+
 
 	// private OnSharedPreferenceChangeListener listener;
 
@@ -57,6 +62,8 @@ public class MainActivity extends Activity {
 
 		@Override
 		public void onReceive(Context context, Intent intent) {
+			
+			boolean stoerung = false;
 			Bundle bundle = intent.getExtras();
 			if (bundle != null) {
 				String string = bundle.getString(SteuerungService.STAT_BAT);
@@ -69,10 +76,16 @@ public class MainActivity extends Activity {
 				String strDates = bundle
 						.getString(SteuerungService.STAT_DATE);
 				
+				//stoerung = bundle.getBoolean(SteuerungService.STAT_STOERUNG);
+				
 				battView.setText(string + " Volt");
 				btneditDate.setText(strDates);
 				btneditRunTime.setText(string2 + " h   "+ strStarts+ " Starts");
 				btneditVerbrauch.setText(string3 + " Liter");
+				
+				//btnStoerung.setChecked(stoerung);
+				
+			
 				
 				
 				
@@ -99,7 +112,9 @@ public class MainActivity extends Activity {
 		battView = (TextView) findViewById(R.id.textBatt);
 
 		btnEinAus.setChecked(sharedPrefs.getBoolean("pref_HeizungEin", false));
-
+		
+		btnStoerung= (CheckBox)findViewById(R.id.checkBoxStoerung);
+		
 		doBindService();
 
 		if (sharedPrefs.getBoolean("pref_HeizungEin", false)) {
@@ -148,8 +163,24 @@ public class MainActivity extends Activity {
 
 		}
 	}
+	public void DayNightOnOff(View view) {
+		// Is the toggle on?
+		boolean on = ((ToggleButton) view).isChecked();
 
-	public void onToggleClicked(View view) {
+		if (on) {
+
+			Intent i = new Intent(getBaseContext(), SteuerungService.class);
+			i.setAction(SteuerungService.ACTION_DAY_NIGHT_ON);
+			startService(i);
+
+		} else {
+			Intent i = new Intent(getBaseContext(), SteuerungService.class);
+			i.setAction(SteuerungService.ACTION_DAY_NIGHT_OFF);
+			startService(i);
+		}
+	}		
+
+	/*public void onToggleClicked(View view) {
 		// Is the toggle on?
 		boolean on = ((ToggleButton) view).isChecked();
 
@@ -165,7 +196,7 @@ public class MainActivity extends Activity {
 			startService(i);
 
 		}
-	}
+	}*/
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {

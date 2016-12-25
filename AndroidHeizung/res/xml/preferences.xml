@@ -12,6 +12,10 @@
             android:key="pref_PowerLost"
             android:summary="Sende SMS wenn Strom ausfällt"
             android:title="Spannungsausfall melden" android:persistent="true"/>
+         <CheckBoxPreference
+            android:key="pref_Undervoltage"
+            android:summary="Sende SMS Akkuspannung kritisch"
+            android:title="Akkuspannung kritisch melden" android:persistent="true"/>
     </PreferenceCategory>
     <PreferenceCategory
         android:key="state"
@@ -25,5 +29,12 @@
         android:title="Stunden / Starts" />
     <EditTextPreference android:key="phoneNumber" android:title="Phonenumber" android:summary="This number receives the sms"/>
         android:persistent="true"
+    <com.steuerung.heizung.TimePreference
+        android:key="timeOn_Key"
+        android:title="Tag->Nacht"/>    
+   <com.steuerung.heizung.TimePreference
+        android:key="timeOff_Key"
+        android:title="Nacht->Tag"/>    
+   
 
 </PreferenceScreen>
