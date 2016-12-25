@@ -76,14 +76,14 @@ public class MainActivity extends Activity {
 				String strDates = bundle
 						.getString(SteuerungService.STAT_DATE);
 				
-				//stoerung = bundle.getBoolean(SteuerungService.STAT_STOERUNG);
+				stoerung = bundle.getBoolean(SteuerungService.STAT_STOERUNG);
 				
 				battView.setText(string + " Volt");
 				btneditDate.setText(strDates);
 				btneditRunTime.setText(string2 + " h   "+ strStarts+ " Starts");
 				btneditVerbrauch.setText(string3 + " Liter");
 				
-				//btnStoerung.setChecked(stoerung);
+				btnStoerung.setChecked(stoerung);
 				
 			
 				

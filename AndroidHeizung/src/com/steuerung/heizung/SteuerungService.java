@@ -38,8 +38,6 @@ import com.steuerung.heizung.state.heizungimpl.HeizungStatemachine;
 import com.steuerung.heizung.state.heizungimpl.IHeizungStatemachine.SCIHeizungListener;
 
 import android.app.AlarmManager;
-import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
@@ -57,7 +55,7 @@ import android.widget.Toast;
 
 public class SteuerungService extends Service implements SCIHeizungListener {
 
-	private boolean SimualtionMode = true;
+	private boolean SimualtionMode = false;
 
 	private static Timer timer = new Timer();
 
@@ -516,8 +514,8 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 		}
 		String delims = "[,]";
 
-		// Störung Brenner, Brenner an, Voltage
-		// status, 0 , 1 , 0 512,512
+		//          Reset, Stoerung, Brenner an, Voltage, Temp
+		// status,   0   ,      1  ,          0,     512,  512
 
 		String[] tokens = status.split(delims);
 		if (tokens.length == 6) {
