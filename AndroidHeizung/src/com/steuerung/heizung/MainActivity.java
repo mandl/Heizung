@@ -21,7 +21,6 @@
 package com.steuerung.heizung;
 
 
-
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -124,6 +123,17 @@ public class MainActivity extends Activity {
 		if (sharedPrefs.getBoolean("pref_autoFreitag", false)) {
 			Intent i = new Intent(getBaseContext(), SteuerungService.class);
 			i.setAction(SteuerungService.ACTION_FREITAG_AN);
+			startService(i);
+		}
+		if (sharedPrefs.getBoolean("pref_DayNight", false)) {
+			Intent i = new Intent(getBaseContext(), SteuerungService.class);
+			i.setAction(SteuerungService.ACTION_DAY_NIGHT_ON);
+			startService(i);
+		}
+		else
+		{
+			Intent i = new Intent(getBaseContext(), SteuerungService.class);
+			i.setAction(SteuerungService.ACTION_DAY_NIGHT_OFF);
 			startService(i);
 		}
 		

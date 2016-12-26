@@ -119,7 +119,6 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 
 	private TimerService myTimerService = new TimerService();
 	private HeizungStatemachine myStateMaschine = new HeizungStatemachine();
-	
 
 	private AlarmManager mAlarmManager;
 
@@ -166,7 +165,6 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 			}
 		}
 
-		
 		// SMS event receiver
 		mSMSreceiver = new SmsReceiver();
 		mIntentFilter = new IntentFilter();
@@ -200,7 +198,6 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 		// Restore preferences
 		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-	
 		PowerFailsenden = sharedPrefs.getBoolean("pref_PowerLost", false);
 
 		mRunTime = sharedPrefs.getLong("pref_RunHour", 0);
@@ -221,9 +218,9 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 					PowerFailsenden = prefs.getBoolean("pref_PowerLost", false);
 				} else if (key.equals("pref_autoFreitag")) {
 					if (prefs.getBoolean("pref_autoFreitag", false)) {
-						//myStateMaschine.setAuto(true);
+						// myStateMaschine.setAuto(true);
 					} else {
-						//myStateMaschine.setAuto(false);
+						// myStateMaschine.setAuto(false);
 					}
 				} else if (key.equals("mPhoneNumber")) {
 					mPhoneNumber = prefs.getString("phoneNumber", "");
@@ -338,16 +335,16 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 		String action = intent.getAction();
 		if (action.equals(ACTION_LAUNCH_ALARM)) {
 
-			//myStateMaschine.raiseTime();
+			// myStateMaschine.raiseTime();
 			FreitagAnNext();
 
 		} else if (action.equals(ACTION_HEIZUNG_AN)) {
 			HeizungAn();
-			//myStateMaschine.raiseOn();
+			// myStateMaschine.raiseOn();
 
 		} else if (action.equals(ACTION_HEIZUNG_AUS)) {
 			HeizungAus();
-			//myStateMaschine.raiseOff();
+			// myStateMaschine.raiseOff();
 		} else if (action.equals(ACTION_DAY_NIGHT_ON)) {
 			dayNightActiv = true;
 
@@ -355,20 +352,20 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 			dayNightActiv = false;
 
 		} else if (action.equals(ACTION_FREITAG_AN)) {
-			//myStateMaschine.setAuto(true);
+			// myStateMaschine.setAuto(true);
 
 		} else if (action.equals(ACTION_FREITAG_AUS)) {
 
-			//myStateMaschine.setAuto(false);
+			// myStateMaschine.setAuto(false);
 		} else if (action.equals(ACTION_SMS_AN)) {
 			logSDCard("SMS an");
 			HeizungAn();
-			//myStateMaschine.raiseOn();
+			// myStateMaschine.raiseOn();
 
 		} else if (action.equals(ACTION_SMS_AUS)) {
 			logSDCard("SMS aus ");
 			HeizungAus();
-			//myStateMaschine.raiseOff();
+			// myStateMaschine.raiseOff();
 
 		} else if (action.equals(ACTION_SMS_STATUS)) {
 			SMSStatus();
@@ -518,8 +515,8 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 		}
 		String delims = "[,]";
 
-		//          Reset, Stoerung, Brenner an, Voltage, Temp
-		// status,   0   ,      1  ,          0,     512,  512
+		// Reset, Stoerung, Brenner an, Voltage, Temp
+		// status, 0 , 1 , 0, 512, 512
 
 		String[] tokens = status.split(delims);
 		if (tokens.length == 6) {
@@ -579,21 +576,25 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 
 	private void NachtTagCheck() {
 		if (dayNightActiv == true) {
-			
+
 			mcal = Calendar.getInstance();
 			int min = mcal.get(Calendar.MINUTE);
 			int hour = mcal.get(Calendar.HOUR_OF_DAY);
 			String[] parts = mDayNightOn.split(":");
 			String[] parts2 = mDayNightOff.split(":");
 
-			if ((hour == Integer.parseInt(parts[0])) && (min == Integer.parseInt(parts[1])) && (m_dayNightOn == false)){
-				 m_dayNightOn = true;
-				 HeizungAus();
-				 
+			if ((hour == Integer.parseInt(parts[0])) && (min == Integer.parseInt(parts[1]))
+					&& (m_dayNightOn == false)) {
+				m_dayNightOn = true;
+				logSDCard("dayNightOn = true;");
+				HeizungAus();
+
 			}
-			if ((hour == Integer.parseInt(parts2[0])) && (min == Integer.parseInt(parts2[1])) &&  (m_dayNightOn == true)) {
-				 m_dayNightOn = false;
-				 HeizungAn();
+			if ((hour == Integer.parseInt(parts2[0])) && (min == Integer.parseInt(parts2[1]))
+					&& (m_dayNightOn == true)) {
+				m_dayNightOn = false;
+				HeizungAn();
+				logSDCard("dayNightOn = false;");
 			}
 
 		}
@@ -601,14 +602,16 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 
 	private void CheckAkkuVoltage() {
 		if (mUndervoltage == true) {
-			if (Spannung_Akku < 11.0 && mUndervoltageSend == false) {
+			if (Spannung_Akku < 10.0 && mUndervoltageSend == false) {
 				// storage battery fail
+				logSDCard("Akkuspannung ist  " + Spannung_Akku);
 				SendSMS("Akkuspannung ist  " + Spannung_Akku);
 				mUndervoltageSend = true;
 			}
 			if (Spannung_Akku > 12.8) {
 				// storage battery is ok
 				mUndervoltageSend = true;
+				logSDCard("Akkuspannung >12.8");
 			}
 
 		}
