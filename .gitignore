@@ -15,7 +15,7 @@ project.properties
 # Generated files
 AndroidHeizung/bin/
 AndroidHeizung/gen/
-AndroidHeizung/libs/
+
 
 proguard-project.txt
 
