@@ -180,7 +180,7 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 
 		mAlarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
 
-		myStateMaschine.setTimerService(myTimerService);
+		myStateMaschine.setTimer(myTimerService);
 
 		List<SCIHeizungListener> myList = myStateMaschine.getSCIHeizung().getListeners();
 
@@ -335,16 +335,16 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 		String action = intent.getAction();
 		if (action.equals(ACTION_LAUNCH_ALARM)) {
 
-			// myStateMaschine.raiseTime();
-			FreitagAnNext();
+			myStateMaschine.raiseTime();
+			//FreitagAnNext();
 
 		} else if (action.equals(ACTION_HEIZUNG_AN)) {
-			HeizungAn();
-			// myStateMaschine.raiseOn();
+			//HeizungAn();
+			myStateMaschine.raiseOn();
 
 		} else if (action.equals(ACTION_HEIZUNG_AUS)) {
-			HeizungAus();
-			// myStateMaschine.raiseOff();
+			//HeizungAus();
+			myStateMaschine.raiseOff();
 		} else if (action.equals(ACTION_DAY_NIGHT_ON)) {
 			dayNightActiv = true;
 
@@ -352,20 +352,20 @@ public class SteuerungService extends Service implements SCIHeizungListener {
 			dayNightActiv = false;
 
 		} else if (action.equals(ACTION_FREITAG_AN)) {
-			// myStateMaschine.setAuto(true);
+			myStateMaschine.setAuto(true);
 
 		} else if (action.equals(ACTION_FREITAG_AUS)) {
 
-			// myStateMaschine.setAuto(false);
+			myStateMaschine.setAuto(false);
 		} else if (action.equals(ACTION_SMS_AN)) {
 			logSDCard("SMS an");
-			HeizungAn();
-			// myStateMaschine.raiseOn();
+			//HeizungAn();
+			myStateMaschine.raiseOn();
 
 		} else if (action.equals(ACTION_SMS_AUS)) {
 			logSDCard("SMS aus ");
-			HeizungAus();
-			// myStateMaschine.raiseOff();
+			//HeizungAus();
+			myStateMaschine.raiseOff();
 
 		} else if (action.equals(ACTION_SMS_STATUS)) {
 			SMSStatus();

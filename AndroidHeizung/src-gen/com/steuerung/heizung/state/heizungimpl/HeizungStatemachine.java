@@ -1,652 +1,670 @@
 package com.steuerung.heizung.state.heizungimpl;
 import java.util.LinkedList;
 import java.util.List;
-import com.steuerung.heizung.state.TimeEvent;
-import com.steuerung.heizung.state.ITimerService;
+import com.steuerung.heizung.state.ITimer;
 
 public class HeizungStatemachine implements IHeizungStatemachine {
 
-	private final TimeEvent heizung_main_region_Online_time_event_0 = new TimeEvent(
-			true, 0);
-	private final TimeEvent heizung_main_region_Online_r1_HeizungAutomatik_time_event_0 = new TimeEvent(
-			false, 1);
-	private final TimeEvent heizung_main_region_Offline_time_event_0 = new TimeEvent(
-			true, 2);
-
-	private final boolean[] timeEvents = new boolean[3];
-
-	private final class SCIHeizungImpl implements SCIHeizung {
-
+	protected class SCIHeizungImpl implements SCIHeizung {
+	
 		private List<SCIHeizungListener> listeners = new LinkedList<SCIHeizungListener>();
-
+		
 		public List<SCIHeizungListener> getListeners() {
 			return listeners;
 		}
-
 		private boolean on;
-
+		
 		public boolean isRaisedOn() {
 			return on;
 		}
-
-		private void raiseOn() {
+		
+		protected void raiseOn() {
 			on = true;
 			for (SCIHeizungListener listener : listeners) {
 				listener.onOnRaised();
 			}
 		}
-
+		
 		private boolean off;
-
+		
 		public boolean isRaisedOff() {
 			return off;
 		}
-
-		private void raiseOff() {
+		
+		protected void raiseOff() {
 			off = true;
 			for (SCIHeizungListener listener : listeners) {
 				listener.onOffRaised();
 			}
 		}
-
+		
 		private boolean getstatus;
-
+		
 		public boolean isRaisedGetstatus() {
 			return getstatus;
 		}
-
-		private void raiseGetstatus() {
+		
+		protected void raiseGetstatus() {
 			getstatus = true;
 			for (SCIHeizungListener listener : listeners) {
 				listener.onGetstatusRaised();
 			}
 		}
-
-		public void clearEvents() {
+		
+		protected void clearEvents() {
 		}
-
-		public void clearOutEvents() {
-			on = false;
-			off = false;
-			getstatus = false;
+		protected void clearOutEvents() {
+		
+		on = false;
+		off = false;
+		getstatus = false;
 		}
+		
 	}
-
-	private SCIHeizungImpl sCIHeizung;
-	private final class SCInterfaceImpl implements SCInterface {
-
+	
+	protected SCIHeizungImpl sCIHeizung;
+	
+	protected class SCInterfaceImpl implements SCInterface {
+	
 		private boolean on;
-
+		
 		public void raiseOn() {
 			on = true;
 		}
-
-		private boolean tagnachton;
-
-		public void raiseTagnachton() {
-			tagnachton = true;
-		}
-
+		
 		private boolean off;
-
+		
 		public void raiseOff() {
 			off = true;
 		}
-
-		private boolean timeout;
-
-		public void raiseTimeout() {
-			timeout = true;
-		}
-
-		private boolean connect;
-
-		public void raiseConnect() {
-			connect = true;
-		}
-
+		
 		private boolean time;
-
+		
 		public void raiseTime() {
 			time = true;
 		}
-
+		
 		private boolean auto;
-
+		
 		public boolean getAuto() {
 			return auto;
 		}
-
+		
 		public void setAuto(boolean value) {
 			this.auto = value;
 		}
-
-		private boolean tag;
-
-		public boolean getTag() {
-			return tag;
-		}
-
-		public void setTag(boolean value) {
-			this.tag = value;
-		}
-
-		public void clearEvents() {
+		
+		protected void clearEvents() {
 			on = false;
-			tagnachton = false;
 			off = false;
-			timeout = false;
-			connect = false;
 			time = false;
 		}
-
 	}
-
-	private SCInterfaceImpl sCInterface;
-
+	
+	protected SCInterfaceImpl sCInterface;
+	
+	private boolean initialized = false;
+	
 	public enum State {
-		main_region_Online, main_region_Online_r1_HandSteuerung, main_region_Online_r1_HeizungAutomatik, main_region_Online_r1_HeizungAus, main_region_Offline, $NullState$
+		main_region_Go,
+		main_region_Go_r1_AutoOff,
+		main_region_Go_r1_AutoOn,
+		main_region_Go_r2_off,
+		main_region_Go_r2_on,
+		main_region_Go_rc_status,
+		main_region_Go_rc_status2,
+		$NullState$
 	};
-
-	private State[] historyVector = new State[1];
-	private final State[] stateVector = new State[1];
-
+	
+	private final State[] stateVector = new State[3];
+	
 	private int nextStateIndex;
-
-	private ITimerService timerService;
-
-	private long cycleStartTime;
-
+	
+	private ITimer timer;
+	
+	private final boolean[] timeEvents = new boolean[3];
 	public HeizungStatemachine() {
-
 		sCIHeizung = new SCIHeizungImpl();
 		sCInterface = new SCInterfaceImpl();
-
-		heizung_main_region_Online_time_event_0.setStatemachine(this);
-		heizung_main_region_Online_r1_HeizungAutomatik_time_event_0
-				.setStatemachine(this);
-		heizung_main_region_Offline_time_event_0.setStatemachine(this);
 	}
-
+	
 	public void init() {
-		if (timerService == null) {
-			throw new IllegalStateException("TimerService not set.");
+		this.initialized = true;
+		if (timer == null) {
+			throw new IllegalStateException("timer not set.");
 		}
-		for (int i = 0; i < 1; i++) {
+		for (int i = 0; i < 3; i++) {
 			stateVector[i] = State.$NullState$;
-		}
-
-		for (int i = 0; i < 1; i++) {
-			historyVector[i] = State.$NullState$;
 		}
 		clearEvents();
 		clearOutEvents();
-
-		sCInterface.auto = false;
-
-		sCInterface.tag = false;
+		sCInterface.setAuto(false);
 	}
-
+	
 	public void enter() {
-		if (timerService == null) {
-			throw new IllegalStateException("TimerService not set.");
+		if (!initialized) {
+			throw new IllegalStateException(
+					"The state machine needs to be initialized first by calling the init() function.");
 		}
-		cycleStartTime = timerService.getSystemTimeMillis();
-		entryAction();
-
-		getTimerService().setTimer(heizung_main_region_Offline_time_event_0,
-				1 * 1000, cycleStartTime);
-
-		nextStateIndex = 0;
-		stateVector[0] = State.main_region_Offline;
+		if (timer == null) {
+			throw new IllegalStateException("timer not set.");
+		}
+		enterSequence_main_region_default();
 	}
-
+	
 	public void exit() {
-		switch (stateVector[0]) {
-			case main_region_Online_r1_HandSteuerung :
-				historyVector[0] = stateVector[0];
-
-				nextStateIndex = 0;
-				stateVector[0] = State.$NullState$;
-
-				getTimerService().resetTimer(
-						heizung_main_region_Online_time_event_0);
-				break;
-
-			case main_region_Online_r1_HeizungAutomatik :
-				historyVector[0] = stateVector[0];
-
-				nextStateIndex = 0;
-				stateVector[0] = State.$NullState$;
-
-				getTimerService()
-						.resetTimer(
-								heizung_main_region_Online_r1_HeizungAutomatik_time_event_0);
-
-				getTimerService().resetTimer(
-						heizung_main_region_Online_time_event_0);
-				break;
-
-			case main_region_Online_r1_HeizungAus :
-				historyVector[0] = stateVector[0];
-
-				nextStateIndex = 0;
-				stateVector[0] = State.$NullState$;
-
-				getTimerService().resetTimer(
-						heizung_main_region_Online_time_event_0);
-				break;
-
-			case main_region_Offline :
-				nextStateIndex = 0;
-				stateVector[0] = State.$NullState$;
-
-				getTimerService().resetTimer(
-						heizung_main_region_Offline_time_event_0);
-				break;
-
-			default :
-				break;
-		}
-
-		exitAction();
+		exitSequence_main_region();
 	}
-
+	
+	/**
+	 * @see IStatemachine#isActive()
+	 */
+	public boolean isActive() {
+		return stateVector[0] != State.$NullState$||stateVector[1] != State.$NullState$||stateVector[2] != State.$NullState$;
+	}
+	
+	/** 
+	* Always returns 'false' since this state machine can never become final.
+	*
+	* @see IStatemachine#isFinal()
+	*/
+	public boolean isFinal() {
+		return false;
+	}
+	/**
+	* This method resets the incoming events (time events included).
+	*/
 	protected void clearEvents() {
 		sCIHeizung.clearEvents();
 		sCInterface.clearEvents();
-
-		for (int i = 0; i < timeEvents.length; i++) {
+		for (int i=0; i<timeEvents.length; i++) {
 			timeEvents[i] = false;
 		}
 	}
-
+	
+	/**
+	* This method resets the outgoing events.
+	*/
 	protected void clearOutEvents() {
 		sCIHeizung.clearOutEvents();
 	}
-
+	
+	/**
+	* Returns true if the given state is currently active otherwise false.
+	*/
 	public boolean isStateActive(State state) {
+	
 		switch (state) {
-			case main_region_Online :
-				return stateVector[0].ordinal() >= State.main_region_Online
-						.ordinal()
-						&& stateVector[0].ordinal() <= State.main_region_Online_r1_HeizungAus
-								.ordinal();
-			case main_region_Online_r1_HandSteuerung :
-				return stateVector[0] == State.main_region_Online_r1_HandSteuerung;
-			case main_region_Online_r1_HeizungAutomatik :
-				return stateVector[0] == State.main_region_Online_r1_HeizungAutomatik;
-			case main_region_Online_r1_HeizungAus :
-				return stateVector[0] == State.main_region_Online_r1_HeizungAus;
-			case main_region_Offline :
-				return stateVector[0] == State.main_region_Offline;
-			default :
-				return false;
+		case main_region_Go:
+			return stateVector[0].ordinal() >= State.
+					main_region_Go.ordinal()&& stateVector[0].ordinal() <= State.main_region_Go_rc_status2.ordinal();
+		case main_region_Go_r1_AutoOff:
+			return stateVector[0] == State.main_region_Go_r1_AutoOff;
+		case main_region_Go_r1_AutoOn:
+			return stateVector[0] == State.main_region_Go_r1_AutoOn;
+		case main_region_Go_r2_off:
+			return stateVector[1] == State.main_region_Go_r2_off;
+		case main_region_Go_r2_on:
+			return stateVector[1] == State.main_region_Go_r2_on;
+		case main_region_Go_rc_status:
+			return stateVector[2] == State.main_region_Go_rc_status;
+		case main_region_Go_rc_status2:
+			return stateVector[2] == State.main_region_Go_rc_status2;
+		default:
+			return false;
 		}
 	}
-
-	public void setTimerService(ITimerService timerService) {
-		this.timerService = timerService;
+	
+	/**
+	* Set the {@link ITimer} for the state machine. It must be set
+	* externally on a timed state machine before a run cycle can be correct
+	* executed.
+	* 
+	* @param timer
+	*/
+	public void setTimer(ITimer timer) {
+		this.timer = timer;
 	}
-
-	public ITimerService getTimerService() {
-		return timerService;
+	
+	/**
+	* Returns the currently used timer.
+	* 
+	* @return {@link ITimer}
+	*/
+	public ITimer getTimer() {
+		return timer;
 	}
-
-	public void onTimeEventRaised(TimeEvent timeEvent) {
-		timeEvents[timeEvent.getIndex()] = true;
+	
+	public void timeElapsed(int eventID) {
+		timeEvents[eventID] = true;
 	}
-
+	
 	public SCIHeizung getSCIHeizung() {
 		return sCIHeizung;
 	}
+	
 	public SCInterface getSCInterface() {
 		return sCInterface;
 	}
-
+	
 	public void raiseOn() {
 		sCInterface.raiseOn();
 	}
-	public void raiseTagnachton() {
-		sCInterface.raiseTagnachton();
-	}
+	
 	public void raiseOff() {
 		sCInterface.raiseOff();
 	}
-	public void raiseTimeout() {
-		sCInterface.raiseTimeout();
-	}
-	public void raiseConnect() {
-		sCInterface.raiseConnect();
-	}
+	
 	public void raiseTime() {
 		sCInterface.raiseTime();
 	}
-
+	
 	public boolean getAuto() {
 		return sCInterface.getAuto();
 	}
-
+	
 	public void setAuto(boolean value) {
 		sCInterface.setAuto(value);
 	}
-	public boolean getTag() {
-		return sCInterface.getTag();
+	
+	private boolean check_main_region_Go_r1_AutoOff_tr0_tr0() {
+		return (sCInterface.time) && (sCInterface.getAuto()==true);
 	}
-
-	public void setTag(boolean value) {
-		sCInterface.setTag(value);
+	
+	private boolean check_main_region_Go_r1_AutoOn_tr0_tr0() {
+		return timeEvents[0];
 	}
-
-	/* Entry action for statechart 'Heizung'. */
-	private void entryAction() {
+	
+	private boolean check_main_region_Go_r1_AutoOn_tr1_tr1() {
+		return sCInterface.off;
 	}
-
-	/* Exit action for state 'Heizung'. */
-	private void exitAction() {
+	
+	private boolean check_main_region_Go_r2_off_tr0_tr0() {
+		return sCInterface.on;
 	}
-
-	/* shallow enterSequence with history in child r1 */
-	private void shallowEnterSequenceMain_region_Online_r1() {
-		switch (historyVector[0]) {
-			case main_region_Online_r1_HandSteuerung :
-				sCIHeizung.raiseOn();
-
-				nextStateIndex = 0;
-				stateVector[0] = State.main_region_Online_r1_HandSteuerung;
-				break;
-
-			case main_region_Online_r1_HeizungAutomatik :
-				getTimerService()
-						.setTimer(
-								heizung_main_region_Online_r1_HeizungAutomatik_time_event_0,
-								3 * 1000, cycleStartTime);
-
-				sCIHeizung.raiseOn();
-
-				nextStateIndex = 0;
-				stateVector[0] = State.main_region_Online_r1_HeizungAutomatik;
-				break;
-
-			case main_region_Online_r1_HeizungAus :
-				sCIHeizung.raiseOff();
-
-				nextStateIndex = 0;
-				stateVector[0] = State.main_region_Online_r1_HeizungAus;
-				break;
-
-			default :
-				break;
+	
+	private boolean check_main_region_Go_r2_on_tr0_tr0() {
+		return sCInterface.off;
+	}
+	
+	private boolean check_main_region_Go_rc_status_tr0_tr0() {
+		return timeEvents[1];
+	}
+	
+	private boolean check_main_region_Go_rc_status2_tr0_tr0() {
+		return timeEvents[2];
+	}
+	
+	private void effect_main_region_Go_r1_AutoOff_tr0() {
+		exitSequence_main_region_Go_r1_AutoOff();
+		enterSequence_main_region_Go_r1_AutoOn_default();
+	}
+	
+	private void effect_main_region_Go_r1_AutoOn_tr0() {
+		exitSequence_main_region_Go_r1_AutoOn();
+		enterSequence_main_region_Go_r1_AutoOff_default();
+	}
+	
+	private void effect_main_region_Go_r1_AutoOn_tr1() {
+		exitSequence_main_region_Go_r1_AutoOn();
+		enterSequence_main_region_Go_r1_AutoOff_default();
+	}
+	
+	private void effect_main_region_Go_r2_off_tr0() {
+		exitSequence_main_region_Go_r2_off();
+		enterSequence_main_region_Go_r2_on_default();
+	}
+	
+	private void effect_main_region_Go_r2_on_tr0() {
+		exitSequence_main_region_Go_r2_on();
+		enterSequence_main_region_Go_r2_off_default();
+	}
+	
+	private void effect_main_region_Go_rc_status_tr0() {
+		exitSequence_main_region_Go_rc_status();
+		enterSequence_main_region_Go_rc_status2_default();
+	}
+	
+	private void effect_main_region_Go_rc_status2_tr0() {
+		exitSequence_main_region_Go_rc_status2();
+		enterSequence_main_region_Go_rc_status_default();
+	}
+	
+	/* Entry action for state 'AutoOff'. */
+	private void entryAction_main_region_Go_r1_AutoOff() {
+		sCIHeizung.raiseOff();
+	}
+	
+	/* Entry action for state 'AutoOn'. */
+	private void entryAction_main_region_Go_r1_AutoOn() {
+		timer.setTimer(this, 0, 50400 * 1000, false);
+		
+		sCIHeizung.raiseOn();
+	}
+	
+	/* Entry action for state 'off'. */
+	private void entryAction_main_region_Go_r2_off() {
+		sCIHeizung.raiseOff();
+	}
+	
+	/* Entry action for state 'on'. */
+	private void entryAction_main_region_Go_r2_on() {
+		sCIHeizung.raiseOn();
+	}
+	
+	/* Entry action for state 'status'. */
+	private void entryAction_main_region_Go_rc_status() {
+		timer.setTimer(this, 1, 3 * 1000, false);
+		
+		sCIHeizung.raiseGetstatus();
+	}
+	
+	/* Entry action for state 'status2'. */
+	private void entryAction_main_region_Go_rc_status2() {
+		timer.setTimer(this, 2, 3 * 1000, false);
+		
+		sCIHeizung.raiseGetstatus();
+	}
+	
+	/* Exit action for state 'AutoOn'. */
+	private void exitAction_main_region_Go_r1_AutoOn() {
+		timer.unsetTimer(this, 0);
+	}
+	
+	/* Exit action for state 'status'. */
+	private void exitAction_main_region_Go_rc_status() {
+		timer.unsetTimer(this, 1);
+	}
+	
+	/* Exit action for state 'status2'. */
+	private void exitAction_main_region_Go_rc_status2() {
+		timer.unsetTimer(this, 2);
+	}
+	
+	/* 'default' enter sequence for state Go */
+	private void enterSequence_main_region_Go_default() {
+		enterSequence_main_region_Go_r1_default();
+		enterSequence_main_region_Go_r2_default();
+		enterSequence_main_region_Go_rc_default();
+	}
+	
+	/* 'default' enter sequence for state AutoOff */
+	private void enterSequence_main_region_Go_r1_AutoOff_default() {
+		entryAction_main_region_Go_r1_AutoOff();
+		nextStateIndex = 0;
+		stateVector[0] = State.main_region_Go_r1_AutoOff;
+	}
+	
+	/* 'default' enter sequence for state AutoOn */
+	private void enterSequence_main_region_Go_r1_AutoOn_default() {
+		entryAction_main_region_Go_r1_AutoOn();
+		nextStateIndex = 0;
+		stateVector[0] = State.main_region_Go_r1_AutoOn;
+	}
+	
+	/* 'default' enter sequence for state off */
+	private void enterSequence_main_region_Go_r2_off_default() {
+		entryAction_main_region_Go_r2_off();
+		nextStateIndex = 1;
+		stateVector[1] = State.main_region_Go_r2_off;
+	}
+	
+	/* 'default' enter sequence for state on */
+	private void enterSequence_main_region_Go_r2_on_default() {
+		entryAction_main_region_Go_r2_on();
+		nextStateIndex = 1;
+		stateVector[1] = State.main_region_Go_r2_on;
+	}
+	
+	/* 'default' enter sequence for state status */
+	private void enterSequence_main_region_Go_rc_status_default() {
+		entryAction_main_region_Go_rc_status();
+		nextStateIndex = 2;
+		stateVector[2] = State.main_region_Go_rc_status;
+	}
+	
+	/* 'default' enter sequence for state status2 */
+	private void enterSequence_main_region_Go_rc_status2_default() {
+		entryAction_main_region_Go_rc_status2();
+		nextStateIndex = 2;
+		stateVector[2] = State.main_region_Go_rc_status2;
+	}
+	
+	/* 'default' enter sequence for region main region */
+	private void enterSequence_main_region_default() {
+		react_main_region__entry_Default();
+	}
+	
+	/* 'default' enter sequence for region r1 */
+	private void enterSequence_main_region_Go_r1_default() {
+		react_main_region_Go_r1__entry_Default();
+	}
+	
+	/* 'default' enter sequence for region r2 */
+	private void enterSequence_main_region_Go_r2_default() {
+		react_main_region_Go_r2__entry_Default();
+	}
+	
+	/* 'default' enter sequence for region rc */
+	private void enterSequence_main_region_Go_rc_default() {
+		react_main_region_Go_rc__entry_Default();
+	}
+	
+	/* Default exit sequence for state AutoOff */
+	private void exitSequence_main_region_Go_r1_AutoOff() {
+		nextStateIndex = 0;
+		stateVector[0] = State.$NullState$;
+	}
+	
+	/* Default exit sequence for state AutoOn */
+	private void exitSequence_main_region_Go_r1_AutoOn() {
+		nextStateIndex = 0;
+		stateVector[0] = State.$NullState$;
+		
+		exitAction_main_region_Go_r1_AutoOn();
+	}
+	
+	/* Default exit sequence for state off */
+	private void exitSequence_main_region_Go_r2_off() {
+		nextStateIndex = 1;
+		stateVector[1] = State.$NullState$;
+	}
+	
+	/* Default exit sequence for state on */
+	private void exitSequence_main_region_Go_r2_on() {
+		nextStateIndex = 1;
+		stateVector[1] = State.$NullState$;
+	}
+	
+	/* Default exit sequence for state status */
+	private void exitSequence_main_region_Go_rc_status() {
+		nextStateIndex = 2;
+		stateVector[2] = State.$NullState$;
+		
+		exitAction_main_region_Go_rc_status();
+	}
+	
+	/* Default exit sequence for state status2 */
+	private void exitSequence_main_region_Go_rc_status2() {
+		nextStateIndex = 2;
+		stateVector[2] = State.$NullState$;
+		
+		exitAction_main_region_Go_rc_status2();
+	}
+	
+	/* Default exit sequence for region main region */
+	private void exitSequence_main_region() {
+		switch (stateVector[0]) {
+		case main_region_Go_r1_AutoOff:
+			exitSequence_main_region_Go_r1_AutoOff();
+			break;
+		case main_region_Go_r1_AutoOn:
+			exitSequence_main_region_Go_r1_AutoOn();
+			break;
+		default:
+			break;
+		}
+		
+		switch (stateVector[1]) {
+		case main_region_Go_r2_off:
+			exitSequence_main_region_Go_r2_off();
+			break;
+		case main_region_Go_r2_on:
+			exitSequence_main_region_Go_r2_on();
+			break;
+		default:
+			break;
+		}
+		
+		switch (stateVector[2]) {
+		case main_region_Go_rc_status:
+			exitSequence_main_region_Go_rc_status();
+			break;
+		case main_region_Go_rc_status2:
+			exitSequence_main_region_Go_rc_status2();
+			break;
+		default:
+			break;
 		}
 	}
-
-	/* The reactions of state HandSteuerung. */
-	private void reactMain_region_Online_r1_HandSteuerung() {
-		if (sCInterface.timeout) {
-			historyVector[0] = stateVector[0];
-
-			switch (stateVector[0]) {
-				case main_region_Online_r1_HandSteuerung :
-					nextStateIndex = 0;
-					stateVector[0] = State.$NullState$;
-					break;
-
-				case main_region_Online_r1_HeizungAutomatik :
-					nextStateIndex = 0;
-					stateVector[0] = State.$NullState$;
-
-					getTimerService()
-							.resetTimer(
-									heizung_main_region_Online_r1_HeizungAutomatik_time_event_0);
-					break;
-
-				case main_region_Online_r1_HeizungAus :
-					nextStateIndex = 0;
-					stateVector[0] = State.$NullState$;
-					break;
-
-				default :
-					break;
-			}
-
-			getTimerService().resetTimer(
-					heizung_main_region_Online_time_event_0);
-
-			getTimerService().setTimer(
-					heizung_main_region_Offline_time_event_0, 1 * 1000,
-					cycleStartTime);
-
-			nextStateIndex = 0;
-			stateVector[0] = State.main_region_Offline;
+	
+	/* Default exit sequence for region r1 */
+	private void exitSequence_main_region_Go_r1() {
+		switch (stateVector[0]) {
+		case main_region_Go_r1_AutoOff:
+			exitSequence_main_region_Go_r1_AutoOff();
+			break;
+		case main_region_Go_r1_AutoOn:
+			exitSequence_main_region_Go_r1_AutoOn();
+			break;
+		default:
+			break;
+		}
+	}
+	
+	/* Default exit sequence for region r2 */
+	private void exitSequence_main_region_Go_r2() {
+		switch (stateVector[1]) {
+		case main_region_Go_r2_off:
+			exitSequence_main_region_Go_r2_off();
+			break;
+		case main_region_Go_r2_on:
+			exitSequence_main_region_Go_r2_on();
+			break;
+		default:
+			break;
+		}
+	}
+	
+	/* Default exit sequence for region rc */
+	private void exitSequence_main_region_Go_rc() {
+		switch (stateVector[2]) {
+		case main_region_Go_rc_status:
+			exitSequence_main_region_Go_rc_status();
+			break;
+		case main_region_Go_rc_status2:
+			exitSequence_main_region_Go_rc_status2();
+			break;
+		default:
+			break;
+		}
+	}
+	
+	/* The reactions of state AutoOff. */
+	private void react_main_region_Go_r1_AutoOff() {
+		if (check_main_region_Go_r1_AutoOff_tr0_tr0()) {
+			effect_main_region_Go_r1_AutoOff_tr0();
+		}
+	}
+	
+	/* The reactions of state AutoOn. */
+	private void react_main_region_Go_r1_AutoOn() {
+		if (check_main_region_Go_r1_AutoOn_tr0_tr0()) {
+			effect_main_region_Go_r1_AutoOn_tr0();
 		} else {
-			if (timeEvents[heizung_main_region_Online_time_event_0.getIndex()]) {
-				sCIHeizung.raiseGetstatus();
-			}
-
-			if (sCInterface.off) {
-				nextStateIndex = 0;
-				stateVector[0] = State.$NullState$;
-
-				sCIHeizung.raiseOff();
-
-				nextStateIndex = 0;
-				stateVector[0] = State.main_region_Online_r1_HeizungAus;
+			if (check_main_region_Go_r1_AutoOn_tr1_tr1()) {
+				effect_main_region_Go_r1_AutoOn_tr1();
 			}
 		}
 	}
-
-	/* The reactions of state HeizungAutomatik. */
-	private void reactMain_region_Online_r1_HeizungAutomatik() {
-		if (sCInterface.timeout) {
-			historyVector[0] = stateVector[0];
-
-			switch (stateVector[0]) {
-				case main_region_Online_r1_HandSteuerung :
-					nextStateIndex = 0;
-					stateVector[0] = State.$NullState$;
-					break;
-
-				case main_region_Online_r1_HeizungAutomatik :
-					nextStateIndex = 0;
-					stateVector[0] = State.$NullState$;
-
-					getTimerService()
-							.resetTimer(
-									heizung_main_region_Online_r1_HeizungAutomatik_time_event_0);
-					break;
-
-				case main_region_Online_r1_HeizungAus :
-					nextStateIndex = 0;
-					stateVector[0] = State.$NullState$;
-					break;
-
-				default :
-					break;
-			}
-
-			getTimerService().resetTimer(
-					heizung_main_region_Online_time_event_0);
-
-			getTimerService().setTimer(
-					heizung_main_region_Offline_time_event_0, 1 * 1000,
-					cycleStartTime);
-
-			nextStateIndex = 0;
-			stateVector[0] = State.main_region_Offline;
-		} else {
-			if (timeEvents[heizung_main_region_Online_time_event_0.getIndex()]) {
-				sCIHeizung.raiseGetstatus();
-			}
-
-			if (timeEvents[heizung_main_region_Online_r1_HeizungAutomatik_time_event_0
-					.getIndex()]) {
-				nextStateIndex = 0;
-				stateVector[0] = State.$NullState$;
-
-				getTimerService()
-						.resetTimer(
-								heizung_main_region_Online_r1_HeizungAutomatik_time_event_0);
-
-				sCIHeizung.raiseOff();
-
-				nextStateIndex = 0;
-				stateVector[0] = State.main_region_Online_r1_HeizungAus;
-			} else {
-				if (sCInterface.off) {
-					nextStateIndex = 0;
-					stateVector[0] = State.$NullState$;
-
-					getTimerService()
-							.resetTimer(
-									heizung_main_region_Online_r1_HeizungAutomatik_time_event_0);
-
-					sCIHeizung.raiseOff();
-
-					nextStateIndex = 0;
-					stateVector[0] = State.main_region_Online_r1_HeizungAus;
-				} else {
-					if (sCInterface.on) {
-						nextStateIndex = 0;
-						stateVector[0] = State.$NullState$;
-
-						getTimerService()
-								.resetTimer(
-										heizung_main_region_Online_r1_HeizungAutomatik_time_event_0);
-
-						sCIHeizung.raiseOn();
-
-						nextStateIndex = 0;
-						stateVector[0] = State.main_region_Online_r1_HandSteuerung;
-					}
-				}
-			}
+	
+	/* The reactions of state off. */
+	private void react_main_region_Go_r2_off() {
+		if (check_main_region_Go_r2_off_tr0_tr0()) {
+			effect_main_region_Go_r2_off_tr0();
 		}
 	}
-
-	/* The reactions of state HeizungAus. */
-	private void reactMain_region_Online_r1_HeizungAus() {
-		if (sCInterface.timeout) {
-			historyVector[0] = stateVector[0];
-
-			switch (stateVector[0]) {
-				case main_region_Online_r1_HandSteuerung :
-					nextStateIndex = 0;
-					stateVector[0] = State.$NullState$;
-					break;
-
-				case main_region_Online_r1_HeizungAutomatik :
-					nextStateIndex = 0;
-					stateVector[0] = State.$NullState$;
-
-					getTimerService()
-							.resetTimer(
-									heizung_main_region_Online_r1_HeizungAutomatik_time_event_0);
-					break;
-
-				case main_region_Online_r1_HeizungAus :
-					nextStateIndex = 0;
-					stateVector[0] = State.$NullState$;
-					break;
-
-				default :
-					break;
-			}
-
-			getTimerService().resetTimer(
-					heizung_main_region_Online_time_event_0);
-
-			getTimerService().setTimer(
-					heizung_main_region_Offline_time_event_0, 1 * 1000,
-					cycleStartTime);
-
-			nextStateIndex = 0;
-			stateVector[0] = State.main_region_Offline;
-		} else {
-			if (timeEvents[heizung_main_region_Online_time_event_0.getIndex()]) {
-				sCIHeizung.raiseGetstatus();
-			}
-
-			if (sCInterface.time && sCInterface.auto == true) {
-				nextStateIndex = 0;
-				stateVector[0] = State.$NullState$;
-
-				getTimerService()
-						.setTimer(
-								heizung_main_region_Online_r1_HeizungAutomatik_time_event_0,
-								3 * 1000, cycleStartTime);
-
-				sCIHeizung.raiseOn();
-
-				nextStateIndex = 0;
-				stateVector[0] = State.main_region_Online_r1_HeizungAutomatik;
-			} else {
-				if (sCInterface.on) {
-					nextStateIndex = 0;
-					stateVector[0] = State.$NullState$;
-
-					sCIHeizung.raiseOn();
-
-					nextStateIndex = 0;
-					stateVector[0] = State.main_region_Online_r1_HandSteuerung;
-				}
-			}
+	
+	/* The reactions of state on. */
+	private void react_main_region_Go_r2_on() {
+		if (check_main_region_Go_r2_on_tr0_tr0()) {
+			effect_main_region_Go_r2_on_tr0();
 		}
 	}
-
-	/* The reactions of state Offline. */
-	private void reactMain_region_Offline() {
-		if (sCInterface.connect) {
-			nextStateIndex = 0;
-			stateVector[0] = State.$NullState$;
-
-			getTimerService().resetTimer(
-					heizung_main_region_Offline_time_event_0);
-
-			getTimerService().setTimer(heizung_main_region_Online_time_event_0,
-					5 * 1000, cycleStartTime);
-
-			/* Enter the region with shallow history */
-			if (historyVector[0] != State.$NullState$) {
-				shallowEnterSequenceMain_region_Online_r1();
-			} else {
-				sCIHeizung.raiseOff();
-
-				nextStateIndex = 0;
-				stateVector[0] = State.main_region_Online_r1_HeizungAus;
-			}
-		} else {
-			if (timeEvents[heizung_main_region_Offline_time_event_0.getIndex()]) {
-				sCIHeizung.raiseGetstatus();
-			}
+	
+	/* The reactions of state status. */
+	private void react_main_region_Go_rc_status() {
+		if (check_main_region_Go_rc_status_tr0_tr0()) {
+			effect_main_region_Go_rc_status_tr0();
 		}
 	}
-
+	
+	/* The reactions of state status2. */
+	private void react_main_region_Go_rc_status2() {
+		if (check_main_region_Go_rc_status2_tr0_tr0()) {
+			effect_main_region_Go_rc_status2_tr0();
+		}
+	}
+	
+	/* Default react sequence for initial entry  */
+	private void react_main_region__entry_Default() {
+		enterSequence_main_region_Go_default();
+	}
+	
+	/* Default react sequence for initial entry  */
+	private void react_main_region_Go_r1__entry_Default() {
+		enterSequence_main_region_Go_r1_AutoOff_default();
+	}
+	
+	/* Default react sequence for initial entry  */
+	private void react_main_region_Go_r2__entry_Default() {
+		enterSequence_main_region_Go_r2_off_default();
+	}
+	
+	/* Default react sequence for initial entry  */
+	private void react_main_region_Go_rc__entry_Default() {
+		enterSequence_main_region_Go_rc_status_default();
+	}
+	
 	public void runCycle() {
-
-		cycleStartTime = timerService.getSystemTimeMillis();
-
+		if (!initialized)
+			throw new IllegalStateException(
+					"The state machine needs to be initialized first by calling the init() function.");
 		clearOutEvents();
-
 		for (nextStateIndex = 0; nextStateIndex < stateVector.length; nextStateIndex++) {
-
 			switch (stateVector[nextStateIndex]) {
-				case main_region_Online_r1_HandSteuerung :
-					reactMain_region_Online_r1_HandSteuerung();
-					break;
-				case main_region_Online_r1_HeizungAutomatik :
-					reactMain_region_Online_r1_HeizungAutomatik();
-					break;
-				case main_region_Online_r1_HeizungAus :
-					reactMain_region_Online_r1_HeizungAus();
-					break;
-				case main_region_Offline :
-					reactMain_region_Offline();
-					break;
-				default :
-					// $NullState$
+			case main_region_Go_r1_AutoOff:
+				react_main_region_Go_r1_AutoOff();
+				break;
+			case main_region_Go_r1_AutoOn:
+				react_main_region_Go_r1_AutoOn();
+				break;
+			case main_region_Go_r2_off:
+				react_main_region_Go_r2_off();
+				break;
+			case main_region_Go_r2_on:
+				react_main_region_Go_r2_on();
+				break;
+			case main_region_Go_rc_status:
+				react_main_region_Go_rc_status();
+				break;
+			case main_region_Go_rc_status2:
+				react_main_region_Go_rc_status2();
+				break;
+			default:
+				// $NullState$
 			}
 		}
-
 		clearEvents();
 	}
 }
